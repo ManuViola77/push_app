@@ -13,7 +13,13 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
 
   NotificationsBloc() : super(const NotificationsState()) {
     on<NotificationStatusChanged>(_notificationStatusChanged);
+
+    // Verificar estado de ls notificaciones
     _initialStatusCheck();
+
+    // Escuchar mensajes en segundo plano
+    // Listen para mensajes en foreground
+    _onForegroundMessage();
   }
 
   static Future<void> initializeFCM() async {
@@ -42,6 +48,23 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
 
     final token = await messaging.getToken();
     print('FCM Token: $token');
+  }
+
+  void _handleRemoteMessage(RemoteMessage message) {
+    print('Got a message whilst in the foreground!');
+    print('Message data: ${message.data}');
+
+    if (message.notification == null) {
+      return;
+    }
+
+    print('Message also contained a notification: ${message.notification}');
+    print('Remote Message: ${message.notification!.title}');
+    print('Remote Message: ${message.notification!.body}');
+  }
+
+  void _onForegroundMessage() {
+    FirebaseMessaging.onMessage.listen(_handleRemoteMessage);
   }
 
   void requestPermission() async {
