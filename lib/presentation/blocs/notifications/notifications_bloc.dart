@@ -34,6 +34,10 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
     _onForegroundMessage();
   }
 
+  static String getMessageId(RemoteMessage message) {
+    return message.messageId?.replaceAll(':', '').replaceAll('%', '') ?? '';
+  }
+
   static Future<void> initializeFCM() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -73,17 +77,13 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
     print('FCM Token: $token');
   }
 
-  void _handleRemoteMessage(RemoteMessage message) {
+  void handleRemoteMessage(RemoteMessage message) {
     if (message.notification == null) {
       return;
     }
 
-    final messageIdCleaned = message.messageId
-        ?.replaceAll(':', '')
-        .replaceAll('%', '');
-
     final notification = PushMessage(
-      messageId: messageIdCleaned ?? '',
+      messageId: getMessageId(message),
       title: message.notification!.title ?? '',
       body: message.notification!.body ?? '',
       sentDate: message.sentTime ?? DateTime.now(),
@@ -98,7 +98,7 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
   }
 
   void _onForegroundMessage() {
-    FirebaseMessaging.onMessage.listen(_handleRemoteMessage);
+    FirebaseMessaging.onMessage.listen(handleRemoteMessage);
   }
 
   void requestPermission() async {
